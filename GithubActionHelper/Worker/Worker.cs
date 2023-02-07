@@ -43,7 +43,7 @@ public class Worker : BackgroundService
                 {
                     
                 }
-                else
+                else if(lastRun.Conclusion == "failure")
                 {
                     var author = _githubSetting.Authors.Find(item => item.Name == lastRun.HeadCommit.Author.Email);
                     var notification = new Notification
@@ -54,7 +54,9 @@ public class Worker : BackgroundService
                         RunTime = lastRun.CreatedTime,
                         Author = lastRun.HeadCommit.Author.Name,
                         Mentioned = author != null ? author.Wechat : "@all",
-                        Repo = repo
+                        Repo = repo,
+                        Url = lastRun.Url,
+                        Name = lastRun.Name
                     };
                     await _notificationService.SendNotification(notification);
                     repoNotificationRecord.ResetWorkflowRun(lastRun);
@@ -63,7 +65,7 @@ public class Worker : BackgroundService
                 var data = JsonConvert.SerializeObject(result);
                 _logger.LogInformation("Worker running at: {Data}", data);
             }
-            await Task.Delay(60000, stoppingToken);
+            await Task.Delay(5*60*1000, stoppingToken);
         }
     }
 }

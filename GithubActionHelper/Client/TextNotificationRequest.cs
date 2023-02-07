@@ -2,10 +2,10 @@ using Newtonsoft.Json;
 
 namespace GithubActionHelper.Client;
 
-public class WechatNotificationRequest
+public class TextNotificationRequest
 {
-    [JsonProperty("msgtype")]
-    public string Type { get; set; }
+    [JsonProperty("msgtype")] 
+    public string Type = "text";
 
     [JsonProperty("text")]
     public WechatText Text { get; set; }

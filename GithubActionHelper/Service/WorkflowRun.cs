@@ -26,7 +26,7 @@ public class WorkflowRun
         
     [JsonProperty("head_commit")]
     public Commit HeadCommit { get; set; }
-        
+    
     public class Commit
     {
         public string Id { get; set; }
