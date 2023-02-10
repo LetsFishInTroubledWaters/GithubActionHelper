@@ -55,7 +55,7 @@ public class Worker : BackgroundService
                 }
             }
             _logger.LogInformation("Notification finished at: {Data}", DateTimeOffset.UtcNow.ToString());
-            await Task.Delay(3*60*1000, stoppingToken);
+            await Task.Delay(5*60*1000, stoppingToken);
         }
     }
 
