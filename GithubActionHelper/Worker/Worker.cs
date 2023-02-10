@@ -23,26 +23,26 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Dictionary<string, NotificationRecord> repoNotificationRecords = 
-            _githubSetting.Repos.ToDictionary(item => item, item => new NotificationRecord());
+            _githubSetting.Repos.ToDictionary(item => item.FullName, item => new NotificationRecord());
         while (!stoppingToken.IsCancellationRequested)
         {
             foreach (var repo in _githubSetting.Repos)
             {
-                var result = await _workflowService.FindActiveWorkflows(_githubSetting.Owner, repo);
+                var result = await _workflowService.FindActiveWorkflows(_githubSetting.Owner, repo.FullName);
                 var runs = new List<WorkflowRun>();
                 foreach (var workflow in result)
                 {
-                    var run = await _workflowService.FindLastWorkflowRuns(_githubSetting.Owner, repo, workflow.Id);
+                    var run = await _workflowService.FindLastWorkflowRuns(_githubSetting.Owner, repo.FullName, workflow.Id);
                     runs.Add(run);
                 }
 
                 var lastRun = runs.OrderByDescending(item => item.CreatedTime).First();
-                var repoNotificationRecord = repoNotificationRecords[repo];
+                var repoNotificationRecord = repoNotificationRecords[repo.FullName];
                 if (repoNotificationRecord.WorkflowRun != null && repoNotificationRecord.WorkflowRun.Id == lastRun.Id)
                 {
                     if (lastRun.Conclusion == "failure" && repoNotificationRecord.ShouldNoticeAgain())
                     {
-                        await SendFailedNotification(repoNotificationRecord, lastRun, repo);
+                        await SendFailedNotification(repoNotificationRecord, lastRun, repo.NickName);
                     }
                 }
                 else 
@@ -50,7 +50,7 @@ public class Worker : BackgroundService
                     repoNotificationRecord.ResetWorkflowRun(lastRun);
                     if (lastRun.Conclusion == "failure")
                     {
-                        await SendFailedNotification(repoNotificationRecord, lastRun, repo);
+                        await SendFailedNotification(repoNotificationRecord, lastRun, repo.NickName);
                     }
                 }
             }
