@@ -5,14 +5,10 @@ namespace GithubActionHelper.Service.Impl;
 public class NotificationService : INotificationService
 {
     private readonly IWechatClient _wechatClient;
-    
-    private readonly ILogger<NotificationService> _logger;
 
-
-    public NotificationService(IWechatClient wechatClient, ILogger<NotificationService> logger)
+    public NotificationService(IWechatClient wechatClient)
     {
         _wechatClient = wechatClient;
-        _logger = logger;
     }
 
     public async Task SendNotification(Notification notification)
@@ -37,12 +33,12 @@ public class NotificationService : INotificationService
                 },
                 Content = new List<CardNotificationRequest.CardTemplate.CardContent>
                 {
-                    new CardNotificationRequest.CardTemplate.CardContent()
+                    new()
                     {
                         KeyName = "提交人",
                         Value = notification.Author
                     },
-                    new CardNotificationRequest.CardTemplate.CardContent()
+                    new()
                     {
                         KeyName = "触发时间",
                         Value = notification.RunTime.ToOffset(TimeSpan.FromHours(8)).ToString()
@@ -50,7 +46,7 @@ public class NotificationService : INotificationService
                 },
                 JumpList = new List<CardNotificationRequest.CardTemplate.Jump>
                 {
-                    new CardNotificationRequest.CardTemplate.Jump
+                    new()
                     {
                         Title = "点击查看详情",
                         Url = notification.Url

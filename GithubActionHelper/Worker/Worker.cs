@@ -1,5 +1,4 @@
 using GithubActionHelper.Service;
-using Newtonsoft.Json;
 
 namespace GithubActionHelper.Worker;
 
@@ -43,7 +42,6 @@ public class Worker : BackgroundService
                 {
                     if (lastRun.Conclusion == "failure" && repoNotificationRecord.ShouldNoticeAgain())
                     {
-                        repoNotificationRecord.AddNotificationTimes();
                         await SendFailedNotification(repoNotificationRecord, lastRun, repo);
                     }
                 }
@@ -56,6 +54,7 @@ public class Worker : BackgroundService
                     }
                 }
             }
+            _logger.LogInformation("Notification finished at: {Data}", DateTimeOffset.UtcNow.ToString());
             await Task.Delay(3*60*1000, stoppingToken);
         }
     }
