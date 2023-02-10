@@ -41,32 +41,42 @@ public class Worker : BackgroundService
                 var repoNotificationRecord = repoNotificationRecords[repo];
                 if (repoNotificationRecord.WorkflowRun != null && repoNotificationRecord.WorkflowRun.Id == lastRun.Id)
                 {
-                    
-                }
-                else if(lastRun.Conclusion == "failure")
-                {
-                    var author = _githubSetting.Authors.Find(item => item.Email.ToLower() == lastRun.HeadCommit.Author.Email.ToLower());
-                    var notification = new Notification
+                    if (lastRun.Conclusion == "failure" && repoNotificationRecord.ShouldNoticeAgain())
                     {
-                        CommitId = lastRun.HeadCommit.Id,
-                        CommitMessage = lastRun.HeadCommit.Message,
-                        Branch = lastRun.Branch,
-                        RunTime = lastRun.CreatedTime,
-                        Author = lastRun.HeadCommit.Author.Name,
-                        Mentioned = author != null ? author.Wechat : "@all",
-                        Repo = repo,
-                        Url = lastRun.Url,
-                        Name = lastRun.Name
-                    };
-                    await _notificationService.SendNotification(notification);
-                    repoNotificationRecord.ResetWorkflowRun(lastRun);
+                        repoNotificationRecord.AddNotificationTimes();
+                        await SendFailedNotification(repoNotificationRecord, lastRun, repo);
+                    }
                 }
-
-                var data = JsonConvert.SerializeObject(result);
-                _logger.LogInformation("Check {Repo} workflow: {Data}, at {Time}",
-                    repo, data, DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(8)));
+                else 
+                {
+                    repoNotificationRecord.ResetWorkflowRun(lastRun);
+                    if (lastRun.Conclusion == "failure")
+                    {
+                        await SendFailedNotification(repoNotificationRecord, lastRun, repo);
+                    }
+                }
             }
             await Task.Delay(3*60*1000, stoppingToken);
         }
+    }
+
+    private async Task SendFailedNotification(NotificationRecord repoNotificationRecord, WorkflowRun lastRun, string repo)
+    {
+        repoNotificationRecord.AddNotificationTimes();
+        var author = _githubSetting.Authors.Find(item => item.Email.ToLower() == lastRun.HeadCommit.Author.Email.ToLower());
+        var notification = new Notification
+        {
+            CommitId = lastRun.HeadCommit.Id,
+            CommitMessage = lastRun.HeadCommit.Message,
+            Branch = lastRun.Branch,
+            RunTime = lastRun.CreatedTime,
+            Author = lastRun.HeadCommit.Author.Name,
+            Mentioned = author != null ? author.Wechat : "@all",
+            Repo = repo,
+            Url = lastRun.Url,
+            Name = lastRun.Name,
+            Times = repoNotificationRecord.NotificationTimes
+        };
+        await _notificationService.SendNotification(notification);
     }
 }

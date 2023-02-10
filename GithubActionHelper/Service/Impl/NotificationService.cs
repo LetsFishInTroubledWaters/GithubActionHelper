@@ -27,7 +27,7 @@ public class NotificationService : INotificationService
                 },
                 Title = new CardNotificationRequest.CardTemplate.CardDesc
                 {
-                    Title = "Workflow失败",
+                    Title = notification.NotificationTitle,
                     Desc = notification.Name
                 },
                 EmphasisContent = new CardNotificationRequest.CardTemplate.CardDesc
