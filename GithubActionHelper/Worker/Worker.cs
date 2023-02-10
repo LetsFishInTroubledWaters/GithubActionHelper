@@ -45,7 +45,7 @@ public class Worker : BackgroundService
                 }
                 else if(lastRun.Conclusion == "failure")
                 {
-                    var author = _githubSetting.Authors.Find(item => item.Name.ToLower() == lastRun.HeadCommit.Author.Email.ToLower());
+                    var author = _githubSetting.Authors.Find(item => item.Email.ToLower() == lastRun.HeadCommit.Author.Email.ToLower());
                     var notification = new Notification
                     {
                         CommitId = lastRun.HeadCommit.Id,
@@ -66,7 +66,7 @@ public class Worker : BackgroundService
                 _logger.LogInformation("Check {Repo} workflow: {Data}, at {Time}",
                     repo, data, DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(8)));
             }
-            await Task.Delay(5*60*1000, stoppingToken);
+            await Task.Delay(3*60*1000, stoppingToken);
         }
     }
 }

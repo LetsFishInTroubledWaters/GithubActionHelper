@@ -10,8 +10,10 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
         IConfiguration configuration = hostContext.Configuration;
         HttpSetting httpSetting = configuration.GetSection("Http").Get<HttpSetting>();
-        GithubSetting githubSettingSetting = configuration.GetSection("Github").Get<GithubSetting>();
-
+        var repoString = configuration.GetSection("Github:Repos").Get<string>();
+        var authorString = configuration.GetSection("Github:Authors").Get<string>();
+        var ownerString = configuration.GetSection("Github:Owner").Get<string>();
+        var githubSettingSetting = new GithubSetting(repoString, authorString, ownerString);
         services.AddSingleton(httpSetting);
         services.AddSingleton(githubSettingSetting);
         services.AddSingleton<IWorkflowService, WorkflowService>();
