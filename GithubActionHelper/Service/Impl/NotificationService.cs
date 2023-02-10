@@ -28,7 +28,7 @@ public class NotificationService : INotificationService
                 },
                 EmphasisContent = new CardNotificationRequest.CardTemplate.CardDesc
                 {
-                    Title = notification.Repo.Split("_").Last(),
+                    Title = notification.Repo,
                     Desc = $"{notification.Branch}分支"
                 },
                 Content = new List<CardNotificationRequest.CardTemplate.CardContent>
