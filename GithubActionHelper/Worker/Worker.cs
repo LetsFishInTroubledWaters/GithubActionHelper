@@ -1,5 +1,4 @@
 using GithubActionHelper.Service;
-using Newtonsoft.Json;
 
 namespace GithubActionHelper.Worker;
 
@@ -23,8 +22,7 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Dictionary<string, NotificationRecord> repoNotificationRecords = 
-            _githubSetting.Repos.ToDictionary(item => item.FullName, item => new NotificationRecord());
+        List<NotificationRecord> repoNotificationRecords = new List<NotificationRecord>();
         while (!stoppingToken.IsCancellationRequested)
         {
             foreach (var repo in _githubSetting.Repos)
@@ -38,46 +36,69 @@ public class Worker : BackgroundService
                 }
 
                 var lastRun = runs.OrderByDescending(item => item.CreatedTime).First();
-                var repoNotificationRecord = repoNotificationRecords[repo.FullName];
-                _logger.LogInformation("[LastRun]: {Data}", JsonConvert.SerializeObject(lastRun));
-                if (repoNotificationRecord.WorkflowRun != null && repoNotificationRecord.WorkflowRun.Id == lastRun.Id)
-                {
-                    if (lastRun.Conclusion == "failure" && repoNotificationRecord.ShouldNoticeAgain())
-                    {
-                        _logger.LogInformation("[LastRun] failure : {Data}", JsonConvert.SerializeObject(lastRun));
-                        await SendFailedNotification(repoNotificationRecord, lastRun, repo.NickName);
-                    }
-                }
-                else 
-                {
-                    repoNotificationRecord.ResetWorkflowRun(lastRun);
-                    if (lastRun.Conclusion == "failure")
-                    {
-                        _logger.LogInformation("[LastRun] failure: {Data}", JsonConvert.SerializeObject(repoNotificationRecord));
-                        await SendFailedNotification(repoNotificationRecord, lastRun, repo.NickName);
-                    }
-                }
+                await HandleNotification(lastRun, repoNotificationRecords, repo);
+            }
+
+            repoNotificationRecords.RemoveAll(item => item.ShouldRemove);
+            var notificationRecords = repoNotificationRecords.FindAll(item => item.ShouldCheckAgain).ToList();
+            foreach (var notificationRecord in notificationRecords)
+            {
+                var run = await _workflowService.FindLastWorkflowRunsByBranch(
+                    _githubSetting.Owner, 
+                    notificationRecord.Repo.FullName, notificationRecord.WorkflowRun.WorkflowId, 
+                    notificationRecord.Branch);
+                await HandleNotification(run, repoNotificationRecords, notificationRecord.Repo);
             }
             _logger.LogInformation("Notification finished at: {Data}", DateTimeOffset.UtcNow.ToString());
             await Task.Delay(2*60*1000, stoppingToken);
         }
     }
 
-    private async Task SendFailedNotification(NotificationRecord repoNotificationRecord, WorkflowRun lastRun, string repo)
+    private async Task HandleNotification(WorkflowRun lastRun, List<NotificationRecord> repoNotificationRecords, GithubSetting.Repo repo)
+    {
+        if (lastRun.IsDependabot)
+        {
+            return;
+        }
+
+        var repoNotificationRecord = repoNotificationRecords
+            .Find(item =>
+                item.Branch == lastRun.Branch
+                && item.Repo.FullName == repo.FullName);
+        if (repoNotificationRecord == null)
+        {
+            repoNotificationRecord = new NotificationRecord(lastRun, repo);
+            repoNotificationRecords.Add(repoNotificationRecord);
+        }
+        else if (!repoNotificationRecord.WorkflowRun.IsCompleted
+                 || repoNotificationRecord.WorkflowRun.Id != lastRun.Id)
+        {
+            repoNotificationRecord.ResetWorkflowRun(lastRun);
+        }
+
+        if (repoNotificationRecord.ShouldNotice())
+        {
+            await SendFailedNotification(repoNotificationRecord, repo.NickName);
+        }
+        repoNotificationRecord.ResetCheckTime();
+    }
+
+    private async Task SendFailedNotification(NotificationRecord repoNotificationRecord, string repo)
     {
         repoNotificationRecord.AddNotificationTimes();
-        var author = _githubSetting.Authors.Find(item => item.Email.ToLower() == lastRun.HeadCommit.Author.Email.ToLower());
+        var workFlowRun = repoNotificationRecord.WorkflowRun;
+        var author = _githubSetting.Authors.Find(item => item.Email.ToLower() == workFlowRun.HeadCommit.Author.Email.ToLower());
         var notification = new Notification
         {
-            CommitId = lastRun.HeadCommit.Id,
-            CommitMessage = lastRun.HeadCommit.Message,
-            Branch = lastRun.Branch,
-            RunTime = lastRun.CreatedTime,
-            Author = lastRun.HeadCommit.Author.Name,
+            CommitId = workFlowRun.HeadCommit.Id,
+            CommitMessage = workFlowRun.HeadCommit.Message,
+            Branch = workFlowRun.Branch,
+            RunTime = workFlowRun.CreatedTime,
+            Author = workFlowRun.HeadCommit.Author.Name,
             Mentioned = author != null ? author.Wechat : "@all",
             Repo = repo,
-            Url = lastRun.Url,
-            Name = lastRun.Name,
+            Url = workFlowRun.Url,
+            Name = workFlowRun.Name,
             Times = repoNotificationRecord.NotificationTimes
         };
         await _notificationService.SendNotification(notification);

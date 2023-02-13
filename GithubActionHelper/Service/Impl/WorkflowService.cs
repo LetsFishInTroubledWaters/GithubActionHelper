@@ -23,4 +23,11 @@ public class WorkflowService : IWorkflowService
         return workflowRuns
             .First();
     }
+
+    public async Task<WorkflowRun> FindLastWorkflowRunsByBranch(string owner, string repo, long workflowId, string branch)
+    {
+        var workflowRuns = await _githubClient.GetWorkflowRun(owner, repo, workflowId, branch: branch);
+        return workflowRuns
+            .First();    
+    }
 }

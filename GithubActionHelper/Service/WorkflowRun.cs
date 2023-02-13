@@ -26,6 +26,15 @@ public class WorkflowRun
         
     [JsonProperty("head_commit")]
     public Commit HeadCommit { get; set; }
+
+    [JsonProperty("workflow_id")]
+    public long WorkflowId { get; set; }
+    
+    public bool IsDependabot => Branch.StartsWith("dependabot");
+
+    public bool IsCompleted => Status == "completed";
+
+    public bool IsFailure => Conclusion == "failure";
     
     public class Commit
     {

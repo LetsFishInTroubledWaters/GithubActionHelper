@@ -18,9 +18,14 @@ public class GithubClient : IGithubClient
         return result!.Workflows;
     }
     
-    public async Task<List<WorkflowRun>> GetWorkflowRun(string owner, string repo, long workflowId, long pageSize = 1)
+    public async Task<List<WorkflowRun>> GetWorkflowRun(string owner, string repo, long workflowId, long pageSize = 1, string? branch = null)
     {
-        var result = await GetAsync<WorkflowRunResponse>($"repos/{owner}/{repo}/actions/workflows/{workflowId}/runs?per_page={pageSize}");
+        var url = $"repos/{owner}/{repo}/actions/workflows/{workflowId}/runs?per_page={pageSize}";
+        if (branch != null)
+        {
+            url += $"&branch={branch}";
+        }
+        var result = await GetAsync<WorkflowRunResponse>(url);
 
         return result!.WorkflowRuns;
     }
