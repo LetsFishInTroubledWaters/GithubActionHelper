@@ -1,4 +1,5 @@
 using GithubActionHelper.Service;
+using Newtonsoft.Json;
 
 namespace GithubActionHelper.Worker;
 
@@ -38,10 +39,12 @@ public class Worker : BackgroundService
 
                 var lastRun = runs.OrderByDescending(item => item.CreatedTime).First();
                 var repoNotificationRecord = repoNotificationRecords[repo.FullName];
+                _logger.LogInformation("[LastRun]: {Data}", JsonConvert.SerializeObject(lastRun));
                 if (repoNotificationRecord.WorkflowRun != null && repoNotificationRecord.WorkflowRun.Id == lastRun.Id)
                 {
                     if (lastRun.Conclusion == "failure" && repoNotificationRecord.ShouldNoticeAgain())
                     {
+                        _logger.LogInformation("[LastRun] failure : {Data}", JsonConvert.SerializeObject(lastRun));
                         await SendFailedNotification(repoNotificationRecord, lastRun, repo.NickName);
                     }
                 }
@@ -50,6 +53,7 @@ public class Worker : BackgroundService
                     repoNotificationRecord.ResetWorkflowRun(lastRun);
                     if (lastRun.Conclusion == "failure")
                     {
+                        _logger.LogInformation("[LastRun] failure: {Data}", JsonConvert.SerializeObject(repoNotificationRecord));
                         await SendFailedNotification(repoNotificationRecord, lastRun, repo.NickName);
                     }
                 }

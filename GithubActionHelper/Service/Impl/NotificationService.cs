@@ -1,4 +1,5 @@
 using GithubActionHelper.Client;
+using Newtonsoft.Json;
 
 namespace GithubActionHelper.Service.Impl;
 
@@ -6,9 +7,12 @@ public class NotificationService : INotificationService
 {
     private readonly IWechatClient _wechatClient;
 
-    public NotificationService(IWechatClient wechatClient)
+    private readonly ILogger<NotificationService> _logger;
+
+    public NotificationService(IWechatClient wechatClient, ILogger<NotificationService> logger)
     {
         _wechatClient = wechatClient;
+        _logger = logger;
     }
 
     public async Task SendNotification(Notification notification)
@@ -67,7 +71,8 @@ public class NotificationService : INotificationService
                 Mentioned = new List<string> { notification.Mentioned }
             }
         };
-        await _wechatClient.PostMessageAsync<object>(card);
+        var result = await _wechatClient.PostMessageAsync<object>(card);
+        _logger.LogInformation("[PostResult]: {Data}", JsonConvert.SerializeObject(result));
         await _wechatClient.PostMessageAsync<object>(wechatNotificationRequest);
     }
 }
