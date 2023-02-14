@@ -28,12 +28,26 @@ public class NotificationService : INotificationService
                 Title = new CardNotificationRequest.CardTemplate.CardDesc
                 {
                     Title = notification.NotificationTitle,
-                    Desc = notification.Name
+                    Desc = notification.Repo
                 },
-                EmphasisContent = new CardNotificationRequest.CardTemplate.CardDesc
+                ImageTextArea = new CardNotificationRequest.CardTemplate.ImageText
                 {
                     Title = notification.Repo,
-                    Desc = $"{notification.Branch}分支"
+                    Desc = $"{notification.Branch}分支-{notification.Name}构建失败",
+                    Url = notification.Url
+                },
+                VerticalContentList = new List<CardNotificationRequest.CardTemplate.CardDesc>
+                {
+                    new()
+                    {
+                        Title = "提交Id:",
+                        Desc = notification.CommitId
+                    },
+                    new()
+                    {
+                        Title = "提交信息:",
+                        Desc = notification.CommitMessage
+                    },
                 },
                 Content = new List<CardNotificationRequest.CardTemplate.CardContent>
                 {
