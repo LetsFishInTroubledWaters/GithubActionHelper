@@ -71,7 +71,8 @@ public class Worker : BackgroundService
             repoNotificationRecords.Add(repoNotificationRecord);
         }
         else if (!repoNotificationRecord.WorkflowRun.IsCompleted
-                 || repoNotificationRecord.WorkflowRun.Id != lastRun.Id)
+                 || repoNotificationRecord.WorkflowRun.Id != lastRun.Id
+                 || repoNotificationRecord.WorkflowRun.Conclusion != lastRun.Conclusion)
         {
             repoNotificationRecord.ResetWorkflowRun(lastRun);
         }
