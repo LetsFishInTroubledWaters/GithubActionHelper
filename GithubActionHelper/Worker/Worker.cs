@@ -102,6 +102,18 @@ public class Worker : BackgroundService
             Name = workFlowRun.Name,
             Times = repoNotificationRecord.NotificationTimes
         };
-        await _notificationService.SendNotification(notification);
+        if (IsWorkTime())
+        {
+            await _notificationService.SendNotification(notification);
+        }
+    }
+    
+    private static bool IsWorkTime()
+    {
+        var now = DateTime.Now;
+        return now.DayOfWeek >= DayOfWeek.Monday
+               && now.DayOfWeek <= DayOfWeek.Friday
+               && now.TimeOfDay >= new TimeSpan(9, 30, 0)
+               && now.TimeOfDay <= new TimeSpan(22, 30, 0);
     }
 }
