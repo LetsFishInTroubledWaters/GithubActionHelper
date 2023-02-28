@@ -114,6 +114,6 @@ public class Worker : BackgroundService
         return now.DayOfWeek >= DayOfWeek.Monday
                && now.DayOfWeek <= DayOfWeek.Friday
                && now.TimeOfDay >= new TimeSpan(9, 30, 0)
-               && now.TimeOfDay <= new TimeSpan(22, 30, 0);
+               && now.TimeOfDay <= new TimeSpan(18, 30, 0);
     }
 }
