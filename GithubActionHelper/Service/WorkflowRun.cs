@@ -23,6 +23,9 @@ public class WorkflowRun
         
     [JsonProperty("created_at")]
     public DateTimeOffset CreatedTime { get; set; }
+    
+    [JsonProperty("updated_at")]
+    public DateTimeOffset UpdatedAt { get; set; }
         
     [JsonProperty("head_commit")]
     public Commit HeadCommit { get; set; }

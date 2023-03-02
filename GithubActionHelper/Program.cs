@@ -18,6 +18,7 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddSingleton(githubSettingSetting);
         services.AddSingleton<IWorkflowService, WorkflowService>();
         services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<IWorkFlowRunContainer, WorkFlowRunContainer>();
 
         services.AddHttpClient<IGithubClient, GithubClient>(client =>
             {
