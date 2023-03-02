@@ -6,3 +6,4 @@ riderModule.iml
 appsettings.Development.json
 .idea
 .DS_Store
+.vscode
