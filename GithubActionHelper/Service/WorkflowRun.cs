@@ -39,6 +39,8 @@ public class WorkflowRun
 
     public bool IsFailure => Conclusion == "failure";
     
+    public bool IsSuccess => Conclusion == "success";
+    
     public class Commit
     {
         public string Id { get; set; }
@@ -53,6 +55,11 @@ public class WorkflowRun
         public string Name { get; set; }
         
         public string Email { get; set; }
+    }
+
+    public bool Equals(WorkflowRun other)
+    {
+        return Id.Equals(other.Id) && Conclusion.Equals(other.Conclusion);
     }
 }
     

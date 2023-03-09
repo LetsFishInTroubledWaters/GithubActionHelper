@@ -1,4 +1,5 @@
 using GithubActionHelper.Client;
+using MoreLinq;
 using Newtonsoft.Json;
 
 namespace GithubActionHelper.Service.Impl;
@@ -13,6 +14,11 @@ public class NotificationService : INotificationService
     {
         _wechatClient = wechatClient;
         _logger = logger;
+    }
+    
+    public async Task SendNotification(List<Notification> notifications)
+    {
+        await Task.WhenAll(notifications.AsParallel().Select(async notification => await SendNotification(notification)));
     }
 
     public async Task SendNotification(Notification notification)

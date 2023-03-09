@@ -2,5 +2,6 @@ namespace GithubActionHelper.Service;
 
 public interface IWorkFlowRunContainer
 {
-    void Push(string key, WorkflowRun workflowRun);
+    void Add(string key, WorkflowRun workflowRun);
+    List<KeyValuePair<string, WorkflowRunRecord>> GetRecordNeedToNotify();
 }

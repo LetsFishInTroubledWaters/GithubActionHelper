@@ -1,4 +1,3 @@
-using GithubActionHelper.Proxy;
 using GithubActionHelper.Service;
 
 namespace GithubActionHelper.Worker;
@@ -10,12 +9,15 @@ public class NewWorker : BackgroundService
     private readonly GithubSetting _githubSetting;
 
     private readonly IWorkFlowRunContainer _container;
+    
+    private readonly INotificationService _notificationService;
 
-    public NewWorker(GithubSetting githubSetting, IWorkflowService workflowService, IWorkFlowRunContainer container)
+    public NewWorker(GithubSetting githubSetting, IWorkflowService workflowService, IWorkFlowRunContainer container, INotificationService notificationService)
     {
         _githubSetting = githubSetting;
         _workflowService = workflowService;
-        _container = DynamicProxy<IWorkFlowRunContainer>.Create(container);
+        _container = container;
+        _notificationService = notificationService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -29,10 +31,35 @@ public class NewWorker : BackgroundService
                         _workflowService.FindLastWorkflowRuns(_githubSetting.Owner, repo.FullName, workflow.Id)).ToList());
                 var lastRun = workflowRuns.OrderByDescending(item => item.CreatedTime).First();
                 var key = $"{repo.NickName}/{lastRun.Branch}";
-                _container.Push(key, lastRun);
+                _container.Add(key, lastRun);
             }
+            _ = HandleFailedData();
 
             await Task.Delay(2 * 60 * 1000, stoppingToken);
         }
+    }
+
+    private async Task HandleFailedData()
+    {
+        var notifications = _container.GetRecordNeedToNotify()
+            .Select(pair =>
+            {
+                var author = _githubSetting.Authors.Find(item =>
+                    item.Email.ToLower() == pair.Value.HeadCommit.Author.Email.ToLower());
+                return new Notification
+                {
+                    CommitId = pair.Value.HeadCommit.Id,
+                    CommitMessage = pair.Value.HeadCommit.Message,
+                    Branch = pair.Value.Branch,
+                    RunTime = pair.Value.CreatedTime,
+                    Author = pair.Value.HeadCommit.Author.Name,
+                    Mentioned = author != null ? author.Wechat : "@all",
+                    Repo = pair.Key.Split("/")[0],
+                    Url = pair.Value.Url,
+                    Name = pair.Value.Name,
+                    Times = pair.Value.Times
+                };
+            }).ToList();
+        await _notificationService.SendNotification(notifications);
     }
 }
