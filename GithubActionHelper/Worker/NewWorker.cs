@@ -1,4 +1,5 @@
 using GithubActionHelper.Service;
+using GithubActionHelper.Service.Impl;
 
 namespace GithubActionHelper.Worker;
 
@@ -12,12 +13,19 @@ public class NewWorker : BackgroundService
     
     private readonly INotificationService _notificationService;
 
-    public NewWorker(GithubSetting githubSetting, IWorkflowService workflowService, IWorkFlowRunContainer container, INotificationService notificationService)
+    private readonly IWorkdayService _workdayService;
+
+    public NewWorker(GithubSetting githubSetting,
+        IWorkflowService workflowService,
+        IWorkFlowRunContainer container,
+        INotificationService notificationService,
+        IWorkdayService workdayService)
     {
         _githubSetting = githubSetting;
         _workflowService = workflowService;
         _container = container;
         _notificationService = notificationService;
+        _workdayService = workdayService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -33,7 +41,11 @@ public class NewWorker : BackgroundService
                 var key = $"{repo.NickName}/{lastRun.Branch}";
                 _container.Add(key, lastRun);
             }
-            _ = HandleFailedData();
+
+            if (_workdayService.IsWorkDay())
+            {
+                _ = HandleFailedData();   
+            }
 
             await Task.Delay(2 * 60 * 1000, stoppingToken);
         }
